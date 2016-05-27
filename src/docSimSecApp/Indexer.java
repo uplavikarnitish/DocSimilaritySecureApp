@@ -41,7 +41,8 @@ public class Indexer {
 		this.debug = debug;
 		Directory dir = new SimpleFSDirectory(Paths.get(indexDir));
 		//writer = new IndexWriter(dir, new StandardAnalyzer(), true, IndexWriter.MaxFieldLength.UNLIMITED);
-		Analyzer analyzer = new StandardAnalyzer(StandardAnalyzer.STOP_WORDS_SET);
+		Analyzer analyzer = new ModStandAnalyzerWithStem(ModStandAnalyzerWithStem.STOP_WORDS_SET);
+		((ModStandAnalyzerWithStem)analyzer).setMinTokenLength(2);
 		IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer);
 		//Setting the similarity for the writer config to LuceneDefaultSimilarityModified
 		//This is done to remove any effect added upon by the computeLength in Similarity class

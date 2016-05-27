@@ -110,7 +110,8 @@ public class DocSimSecServer
 		int totNumQueryTerms, ret;
 		DocSimSecServer docSimSecServer = new DocSimSecServer();
 		docSimSecServer.listenSocket();
-		String indexLocation = "/home/nuplavikar/index/crawled/stw-10/";//$
+		String indexLocation = "/home/nuplavikar/temp/index/";//$
+
 		String docVecLocation = "/home/nuplavikar/temp/doc_vectors";
 		String encrRandProdMPDir = "/home/nuplavikar/temp/interm_files";
 		String encrRandProdMPFileNameStart = "frmClEncrRandProdMP";
