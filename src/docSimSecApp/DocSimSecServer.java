@@ -18,11 +18,13 @@ public class DocSimSecServer
 
 	ServerSocket serverSocket;
 	ClientServerConnConfigs connConfigs;
+	String keyFileName;
 
 
 	DocSimSecServer()
 	{
 		connConfigs = new ClientServerConnConfigs();
+		keyFileName = connConfigs.getKeyFileName();
 	}
 
 	public void listenSocket()
@@ -103,6 +105,20 @@ public class DocSimSecServer
 		return err;
 	}
 
+	public String getKeyFileName()
+	{
+		if(!(new File(keyFileName).exists()))
+		{
+			Exception e = new FileNotFoundException("ERROR! Key File does not exist!");
+			e.printStackTrace();
+			return null;
+		}
+		else
+		{
+			return keyFileName;
+		}
+	}
+
 
 	public static void main(String[] args)
 	{
@@ -116,7 +132,7 @@ public class DocSimSecServer
 		String encrRandProdMPDir = "/home/nuplavikar/temp/interm_files";
 		String encrRandProdMPFileNameStart = "frmClEncrRandProdMP";
 		String encrSimProdMPFileNameStart = encrRandProdMPDir+"/serCmpEncrSimProdMP";
-		String keyFileName = "/home/nuplavikar/IdeaProjects/DocSimilaritySecureApp/keys.txt";
+		String keyFileName = docSimSecServer.getKeyFileName();
 
 		//Per socket variable declarations
 		Socket clientSocket = null;
@@ -154,7 +170,7 @@ public class DocSimSecServer
 			* */
 
 
-			/*
+			/*keyFileName
 			* Get the number of terms in query - BEGIN
 			* */
 			System.out.println("Reading the number of terms belonging to query ...");
@@ -193,7 +209,8 @@ public class DocSimSecServer
 			 * per file in index.
 			* */
 			GenerateTFIDFVector generateTFIDFVector = new GenerateTFIDFVector();
-			DocVectorInfo docVectorInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation);
+			//We will build vectors for all documents, hence queryDocFileName = null
+			DocVectorInfo docVectorInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation, null);
 			opListIntermRandAndProdFileNames = generateTFIDFVector.writeDocVectorsToDirAndComputeSecureDotProducts(totNumQueryTerms, docVecLocation,
 					new File(encrTFIDFQueryFrmClientFileName).getAbsolutePath(), new File(encrBinQueryFrmClientFileName).getAbsolutePath(), keyFileName);
 			if ( opListIntermRandAndProdFileNames == null )
@@ -272,7 +289,7 @@ public class DocSimSecServer
 				System.err.println("ERROR! in sendEncryptedSimilarityScoreToClient(): "+ret);
 				System.exit(ret);
 			}
-
+			System.out.println("Encrypted similarity scores sent to peer!");
 
 
 		} catch (IOException e)

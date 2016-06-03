@@ -13,15 +13,25 @@ public class ClientServerConnConfigs
 	int serverPortID;
 	int listeningTimeout;
 	String ack;
+	String keyFileName;
 
 
 	ClientServerConnConfigs()
 	{
-		serverHostName = "localhost";
-		serverPortID = 1990;
+		serverHostName = "r13wjiang.managed.mst.edu";
+		//serverHostName = "localhost";
+		serverPortID = 19900;
 		// 1,800,000 milliseconds = 30 minutes.
-		listeningTimeout = 1800000;
+		listeningTimeout = 3600000;
 		ack = "acknowledgement";
+		keyFileName = "/home/nuplavikar/temp/key_files/key_512.txt";
+		//keyFileName = "/home/nuplavikar/temp/key_files/key_1024.txt";
+		//keyFileName = "/home/nuplavikar/temp/key_files/key_2048.txt";
+	}
+
+	String getKeyFileName()
+	{
+		return keyFileName;
 	}
 
 	String getServerHostName()
@@ -65,21 +75,21 @@ public class ClientServerConnConfigs
 		{
 			if ( str.length()>6 )
 			{
-				System.out.println("Trying to send " + str.substring(0, 3) + " ... "+str.substring(str.length()-3, str.length())+" as string to server ...");
+				//System.out.println("Trying to send " + str.substring(0, 3) + " ... "+str.substring(str.length()-3, str.length())+" as string to server ...");
 			}
 			else
 			{
-				System.out.println("Trying to send " + str + " as string to server ...");
+				//System.out.println("Trying to send " + str + " as string to server ...");
 			}
 			objectOutputStream.writeObject(str);
-			System.out.println("Sent " + str + " to server! Waiting for acknowledgement ...");
+			//System.out.println("Sent " + str + " to server! Waiting for acknowledgement ...");
 			if (!isAck((String) objectInputStream.readObject()))
 			{
 				System.out.print("Error! No acknowledgement received!");
 				return -3;
 			}
 
-			System.out.println("Acknowledgement received from server regarding string!");
+			//System.out.println("Acknowledgement received from server regarding string!");
 		} catch (IOException e)
 		{
 			err = -1;
@@ -142,7 +152,7 @@ public class ClientServerConnConfigs
 	{
 		int count=0;
 		File fp = new File(encrQueryVectorFile);
-		System.out.println("Sending the encrypted, randomized intermediate products to client ...");
+		//System.out.println("Sending the encrypted, randomized intermediate products to client ...");
 		if(fp.isDirectory())
 		{
 			Exception e = new Exception("ERROR! Required filename with encrypted vector, name given:"+encrQueryVectorFile);
@@ -222,13 +232,13 @@ public class ClientServerConnConfigs
 				/*
 				* Get the string - BEGIN
 				* */
-				System.out.println((i+1)+"> Reading the number(in string) ...");
+				//System.out.println((i+1)+"> Reading the number(in string) ...");
 				String bigNum = null;
 
 				bigNum = (String) serObjectInputStream.readObject();
 
 
-				System.out.println("Received " + printBigNumInShort(bigNum) + " from client!");
+				//System.out.println("Received " + printBigNumInShort(bigNum) + " from client!");
 
 				if (!(numItems==1) && (i<numItems-1))
 				{
@@ -236,10 +246,10 @@ public class ClientServerConnConfigs
 				}
 				fileWriter.write(bigNum);
 				fileWriter.flush();
-				System.out.println((i + 1) + "> The bigNum has " + (bigNum.length()-1) + " chars! Sending acknowledgement ...");
+				//System.out.println((i + 1) + "> The bigNum has " + (bigNum.length()-1) + " chars! Sending acknowledgement ...");
 				//Send ack
 				serObjectOutputStream.writeObject(new ClientServerConnConfigs().getAck());
-				System.out.println((i + 1) + "> Acknowledgement sent for string!\n");
+				//System.out.println((i + 1) + "> Acknowledgement sent for string!\n");
 				/*
 				* Get the string - END
 				* */
@@ -352,16 +362,16 @@ public class ClientServerConnConfigs
 		int err=0;
 		try
 		{
-			System.out.println("Trying to send " + value + " as integer to server ...");
+			//System.out.println("Trying to send " + value + " as integer to server ...");
 			objectOutputStream.writeObject(value);
-			System.out.println("Sent " + value + " to server! Waiting for acknowledgement ...");
+			//System.out.println("Sent " + value + " to server! Waiting for acknowledgement ...");
 			if (!this.isAck((String) objectInputStream.readObject()))
 			{
 				System.out.print("Error! No acknowledgement received for the "+value+" integer sent!");
 				return -3;
 			}
 
-			System.out.println("Acknowledgement received from server regarding the " + value + " integer sent!");
+			//System.out.println("Acknowledgement received from server regarding the " + value + " integer sent!");
 		} catch (IOException e)
 		{
 			err = -1;
@@ -380,7 +390,7 @@ public class ClientServerConnConfigs
 		try
 		{
 			value = (Integer)objectInputStream.readObject();
-			System.out.println("The read integer has value: " + value + " Sending acknowledgement ...");
+			//System.out.println("The read integer has value: " + value + " Sending acknowledgement ...");
 			/*try
 			{
 				//Thread.sleep(10000);
@@ -390,7 +400,7 @@ public class ClientServerConnConfigs
 			}*/
 
 			objectOutputStream.writeObject(this.getAck());
-			System.out.println("Acknowledgement sent for value read:"+ value +" !");
+			//System.out.println("Acknowledgement sent for value read:"+ value +" !");
 		} catch (IOException e)
 		{
 			System.out.println("ERROR! IOException!");

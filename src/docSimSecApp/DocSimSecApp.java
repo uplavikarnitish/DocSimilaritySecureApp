@@ -29,12 +29,14 @@ public class DocSimSecApp
 	ObjectInputStream clObjectInputStream;
 	int totNumQueryTerms;
 	int totNumDocsInCol;
+	protected String keyFileName;
 
 
 	DocSimSecApp(int numQueryTerms)
 	{
 		totNumQueryTerms = numQueryTerms;
 		connConfigs = new ClientServerConnConfigs();
+		keyFileName = connConfigs.getKeyFileName();
 	}
 
 	int sendServiceRequest()
@@ -61,16 +63,16 @@ public class DocSimSecApp
 
 		try
 		{
-			System.out.println("1====");
+			//System.out.println("1====");
 			//TODO: case for optimization: begins
 			clOutputStream = clientSocket.getOutputStream();
-			System.out.println("2====");
+			//System.out.println("2====");
 			clInputStream = clientSocket.getInputStream();
-			System.out.println("3====");
+			//System.out.println("3====");
 			//TODO: case for optimization: ends
 
 			clObjectOutputStream = new ObjectOutputStream(clOutputStream);
-			System.out.println("4====");
+			//System.out.println("4====");
 			clObjectInputStream = new ObjectInputStream(clInputStream);
 			System.out.println("Created the object input and output streams");
 
@@ -117,6 +119,20 @@ public class DocSimSecApp
 	public int getTotNumDocsInCol()
 	{
 		return totNumDocsInCol;
+	}
+
+	public String getKeyFileName()
+	{
+		if(!(new File(keyFileName).exists()))
+		{
+			Exception e = new FileNotFoundException("ERROR! Key File does not exist!");
+			e.printStackTrace();
+			return null;
+		}
+		else
+		{
+			return keyFileName;
+		}
 	}
 
 	public LinkedList<String> acceptIntermediateValues(int totNumDocsInCol, int noOfTermsToBeMultiplied,
@@ -190,7 +206,7 @@ public class DocSimSecApp
     public static void main(String args[]) throws IOException
 	{
         String indexLocation = "/home/nuplavikar/temp/index/";//$
-        String queryDocName = "3.txt";//$
+        String queryDocName = "1.txt";//$
 		int ret;
 
 
@@ -199,7 +215,7 @@ public class DocSimSecApp
 		String encrQueryTFIDFVectorFile = "/home/nuplavikar/IdeaProjects/DocSimilaritySecureApp/encr_tfidf_q.txt";
 		String encrQueryBinVectorFile = "/home/nuplavikar/IdeaProjects/DocSimilaritySecureApp/encr_bin_q.txt";
         String docVecLocation = "/home/nuplavikar/temp/doc_vectors";
-		String keyFileName = "/home/nuplavikar/IdeaProjects/DocSimilaritySecureApp/keys.txt";
+
 		String intermFileDir = "/home/nuplavikar/temp/interm_files";
 		String intermFileNameStart = "frmServerEncrMultiplicandMultiplier";
 		String encrSimScoreFileNameStart = "frmServerEncrSimScore";
@@ -207,7 +223,10 @@ public class DocSimSecApp
 		String calculatedIntermEncrRandProd = "clCalIntermEncrRandProdMP";
 
         GenerateTFIDFVector generateTFIDFVector = new GenerateTFIDFVector();
-        DocVectorInfo docVectorInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation);
+        DocVectorInfo docVectorInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation, queryDocName);
+
+		DocSimSecApp docSimSecApp = new DocSimSecApp(generateTFIDFVector.getNumGlobalTerms());
+		String keyFileName = docSimSecApp.getKeyFileName();
 
 		if (generateTFIDFVector.writeDocVectorToFile(queryDocName, encrQueryTFIDFVectorFile, encrQueryBinVectorFile, keyFileName) == -1 )
 		{
@@ -215,9 +234,9 @@ public class DocSimSecApp
 			System.exit(-1);
 		}
 
-        System.out.println("Size of double:" + Double.SIZE + " bits  ==  " + Double.BYTES + " bytes");
+        //System.out.println("Size of double:" + Double.SIZE + " bits  ==  " + Double.BYTES + " bytes");
 
-		DocSimSecApp docSimSecApp = new DocSimSecApp(generateTFIDFVector.getNumGlobalTerms());
+
 		//Code to create a socket
 		//Time start
 		Date date= new Date();
