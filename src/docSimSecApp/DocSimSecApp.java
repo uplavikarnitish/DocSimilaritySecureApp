@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Set;
 
 /**
  * Created by nuplavikar on 2/26/16.
@@ -27,14 +28,14 @@ public class DocSimSecApp
 	ObjectOutputStream clObjectOutputStream;
 	InputStream clInputStream;
 	ObjectInputStream clObjectInputStream;
-	int totNumQueryTerms;
+	int totNumGlobalTerms;
 	int totNumDocsInCol;
 	protected String keyFileName;
 
 
 	DocSimSecApp(int numQueryTerms)
 	{
-		totNumQueryTerms = numQueryTerms;
+		totNumGlobalTerms = numQueryTerms;
 		connConfigs = new ClientServerConnConfigs();
 		keyFileName = connConfigs.getKeyFileName();
 	}
@@ -90,11 +91,11 @@ public class DocSimSecApp
 
 	public int sendEncrQuery(String encrFileName)
 	{
-		return connConfigs.sendFileAsString(encrFileName, getNumQueryTerms(), clObjectInputStream, clObjectOutputStream);
+		return connConfigs.sendFileAsString(encrFileName, getNumGlobalTerms(), clObjectInputStream, clObjectOutputStream);
 	}
 
-	public int getNumQueryTerms()
-	{return totNumQueryTerms;}
+	public int getNumGlobalTerms()
+	{return totNumGlobalTerms;}
 
 	public ObjectInputStream getClObjectInputStream()
 	{
@@ -106,9 +107,10 @@ public class DocSimSecApp
 		return clObjectOutputStream;
 	}
 
-	public int sendNumOfQueryTerms()
+	public int receiveTotNumOfGlobalTerms(ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
 	{
-		return connConfigs.sendInteger(this.getNumQueryTerms(), this.getClObjectInputStream(), this.getClObjectOutputStream());
+		totNumGlobalTerms = this.connConfigs.receiveInteger(objectInputStream, objectOutputStream);
+		return totNumGlobalTerms;
 	}
 
 	public int receiveTotNumOfDocs(ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
@@ -203,6 +205,11 @@ public class DocSimSecApp
 		return simScores;
 	}
 
+	public LinkedList<String> receiveGlobalTerms(ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
+	{
+		return connConfigs.acceptStrListFromPeer(objectInputStream, objectOutputStream, this.getNumGlobalTerms());
+	}
+
     public static void main(String args[]) throws IOException
 	{
         String indexLocation = "/home/nuplavikar/temp/index/";//$
@@ -222,21 +229,6 @@ public class DocSimSecApp
 		String simScoreFileNameStart = "clCalSimScoresFinal";
 		String calculatedIntermEncrRandProd = "clCalIntermEncrRandProdMP";
 
-        GenerateTFIDFVector generateTFIDFVector = new GenerateTFIDFVector();
-        DocVectorInfo docVectorInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation, queryDocName);
-
-		DocSimSecApp docSimSecApp = new DocSimSecApp(generateTFIDFVector.getNumGlobalTerms());
-		String keyFileName = docSimSecApp.getKeyFileName();
-
-		if (generateTFIDFVector.writeDocVectorToFile(queryDocName, encrQueryTFIDFVectorFile, encrQueryBinVectorFile, keyFileName) == -1 )
-		{
-			System.err.println("ERROR - FILE NOT FOUND! File "+queryDocName+" is not indexed!");
-			System.exit(-1);
-		}
-
-        //System.out.println("Size of double:" + Double.SIZE + " bits  ==  " + Double.BYTES + " bytes");
-
-
 		//Code to create a socket
 		//Time start
 		Date date= new Date();
@@ -244,23 +236,70 @@ public class DocSimSecApp
 		long time = date.getTime();
 		//Passed the milliseconds to constructor of Timestamp class
 		Timestamp ts1 = new Timestamp(time);
+		Timer timer = new Timer();
+		//Holds starting time in milliseconds since epoch time.
+		long startTime;
+
+		DocSimSecApp docSimSecApp = new DocSimSecApp(0);
 
 
 		docSimSecApp.sendServiceRequest();
 		System.out.println("Calling createSocketIOStreams to create objects");
 		docSimSecApp.createSocketIOStreams();
 
-		//Send number of query terms.
-		if ((ret = docSimSecApp.sendNumOfQueryTerms())!=0)
+		//NOTHING TODO PREPROCESSING STAGE(PreSSC) STARTS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+		System.out.println("Receiving the number of terms belonging to server's global vector space ...");
+		startTime = timer.startTimer();
+		/*keyFileName
+		* Get the number of terms in query - BEGIN
+		* */
+		if (docSimSecApp.receiveTotNumOfGlobalTerms(docSimSecApp.getClObjectInputStream(), docSimSecApp.getClObjectOutputStream())<0)
 		{
-			System.err.println("ERROR! in docSimSecApp.sendNumOfQueryTerms! ret = "+ret);
-			System.exit(ret);
+			System.out.println("ERROR! in receiveTotNumOfGlobalTerms() Invalid number of terms in the query! err: "+docSimSecApp.getNumGlobalTerms());
+			System.exit(-11);
+		}
+		System.out.println("Received the number of terms belonging to server's global vector space!");
+		/*
+		* Get the number of terms in query - END
+		* */
+		//start receiving the global terms one by one- start
+		//It is ASSUMED that both the nodes have used the same analyzer during indexing
+		//because the tokens need to be matched with each other to construct vectors. You don't want a token, which
+		//is stemmed and one that isn't.
+		System.out.println("Obtaining the global terms from server to create query vector ...");
+		LinkedList<String> listOfGlobalTerms = null;
+		if ( (listOfGlobalTerms = docSimSecApp.receiveGlobalTerms(docSimSecApp.getClObjectInputStream(), docSimSecApp.getClObjectOutputStream())) !=null )
+		{
+			System.out.println("ERROR! in receiveGlobalTerms() No. of terms expected: "+docSimSecApp.getNumGlobalTerms());
+			System.exit(-11);
+		}
+		System.out.println("Obtained the global terms from server to create query vector!");
+		if ( listOfGlobalTerms.size()!=docSimSecApp.getNumGlobalTerms() )
+		{
+			System.err.println("ERROR! Invalid number of global terms received! Expected:"+ docSimSecApp.getNumGlobalTerms()+" Obtained:"+listOfGlobalTerms.size());
+			System.exit(-12);
+		}
+		System.out.println("Generating the query vector ...");
+		//start receiving the global terms one by one- end
+
+		GenerateTFIDFVector generateTFIDFVector = new GenerateTFIDFVector();
+        DocVectorInfo docVectorInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation, queryDocName, listOfGlobalTerms);
+
+		System.out.println("Generated the query vector!");
+		//NOTHING TODO PREPROCESSING STAGE(PreSSC) ENDS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+		//NOTHING TODO SSC ALGORITHM LINES 2, 3 STARTS__________________________________________________________________
+		String keyFileName = docSimSecApp.getKeyFileName();
+		if (generateTFIDFVector.writeDocVectorToFile(queryDocName, encrQueryTFIDFVectorFile, encrQueryBinVectorFile, keyFileName) == -1 )
+		{
+			System.err.println("ERROR - FILE NOT FOUND! File "+queryDocName+" is not indexed!");
+			System.exit(-1);
 		}
 		//Send encrypted TFIDF query vector stored in file
 		docSimSecApp.sendEncrQuery(encrQueryTFIDFVectorFile);
-
 		//Send encrypted Binary TFIDF query vector stored in file
 		docSimSecApp.sendEncrQuery(encrQueryBinVectorFile);
+		//NOTHING TODO SSC ALGORITHM LINES 2, 3 ENDS____________________________________________________________________
 
 		//Accept the number of documents in the peer's collection
 		if ( (ret = docSimSecApp.receiveTotNumOfDocs(docSimSecApp.getClObjectInputStream(), docSimSecApp.getClObjectOutputStream())) < 0 )
@@ -342,7 +381,7 @@ public class DocSimSecApp
 		Timestamp ts2 = new Timestamp(time2);
 		System.out.println("START Time Stamp: "+ts1);
 		System.out.println("END Time Stamp: "+ts2);
-		System.out.println("Number of query terms = "+docSimSecApp.getNumQueryTerms());
+		System.out.println("Number of query terms = "+docSimSecApp.getNumGlobalTerms());
 
 
 	}
