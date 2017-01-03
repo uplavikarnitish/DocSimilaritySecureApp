@@ -2,6 +2,7 @@ package docSimSecApp;
 
 import java.io.*;
 import java.util.LinkedList;
+import java.util.Set;
 
 /**
  * Created by nuplavikar on 2/27/16.
@@ -267,6 +268,45 @@ public class ClientServerConnConfigs
 		}
 
 		return err;
+	}
+
+	/*
+	* Accept a fixed number of strings from client. The list of terms is returned.
+	* */
+	public LinkedList<String> acceptStrListFromPeer(ObjectInputStream serObjectInputStream, ObjectOutputStream serObjectOutputStream, int numItems)
+	{
+		int err=0;
+		LinkedList<String> listOfStrings = new LinkedList<String>();
+		try
+		{
+			for (int i=0; i<numItems; i++)
+			{
+				/*
+				* Get the string - BEGIN
+				* */
+				//System.out.println((i+1)+"> Reading the number(in string) ...");
+				String str = null;
+
+				str = (String) serObjectInputStream.readObject();
+				listOfStrings.add(str);
+				//System.out.println("Received " + printBigNumInShort(bigNum) + " from client!");
+
+				serObjectOutputStream.writeObject(new ClientServerConnConfigs().getAck());
+				//System.out.println((i + 1) + "> Acknowledgement sent for string!\n");
+				/*
+				* Get the string - END
+				* */
+			}
+
+		} catch (IOException e)
+		{
+			e.printStackTrace();
+		} catch (ClassNotFoundException e)
+		{
+			e.printStackTrace();
+		}
+
+		return listOfStrings;
 	}
 
 	public static String printBigNumInShort(String bigNum)
