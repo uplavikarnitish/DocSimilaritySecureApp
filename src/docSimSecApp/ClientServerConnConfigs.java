@@ -15,6 +15,8 @@ public class ClientServerConnConfigs
 	int listeningTimeout;
 	String ack;
 	String keyFileName;
+	long lsi_k;
+	boolean useLSI = false;
 
 
 	ClientServerConnConfigs()
@@ -28,6 +30,18 @@ public class ClientServerConnConfigs
 		keyFileName = "/home/nuplavikar/temp/key_files/key_512.txt";
 		//keyFileName = "/home/nuplavikar/temp/key_files/key_1024.txt";
 		//keyFileName = "/home/nuplavikar/temp/key_files/key_2048.txt";
+		//LSI-based parameters
+		lsi_k = 2;
+		useLSI = true;
+	}
+
+	public long getLsi_k()
+	{
+		return lsi_k;
+	}
+	public boolean isLSIEnabled()
+	{
+		return useLSI;
 	}
 
 	String getKeyFileName()
@@ -424,12 +438,69 @@ public class ClientServerConnConfigs
 		return err;
 	}
 
+	public int sendLong(long value, ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
+	{
+		int err=0;
+		try
+		{
+			//System.out.println("Trying to send " + value + " as integer to server ...");
+			objectOutputStream.writeObject(value);
+			//System.out.println("Sent " + value + " to server! Waiting for acknowledgement ...");
+			if (!this.isAck((String) objectInputStream.readObject()))
+			{
+				System.out.print("Error! No acknowledgement received for the "+value+" integer sent!");
+				return -3;
+			}
+
+			//System.out.println("Acknowledgement received from server regarding the " + value + " integer sent!");
+		} catch (IOException e)
+		{
+			err = -1;
+			e.printStackTrace();
+		} catch (ClassNotFoundException e)
+		{
+			err = -2;
+			e.printStackTrace();
+		}
+		return err;
+	}
+
 	public int receiveInteger(ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
 	{
 		int value = -1;
 		try
 		{
 			value = (Integer)objectInputStream.readObject();
+			//System.out.println("The read integer has value: " + value + " Sending acknowledgement ...");
+			/*try
+			{
+				//Thread.sleep(10000);
+			} catch (InterruptedException e)
+			{
+				e.printStackTrace();
+			}*/
+
+			objectOutputStream.writeObject(this.getAck());
+			//System.out.println("Acknowledgement sent for value read:"+ value +" !");
+		} catch (IOException e)
+		{
+			System.out.println("ERROR! IOException!");
+			e.printStackTrace();
+		} catch (ClassNotFoundException e)
+		{
+			value = -2;
+			System.out.println("ERROR! ClassNotFoundException!");
+			e.printStackTrace();
+		}
+		return value;
+	}
+
+	public long receiveLong(ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
+	{
+		long value = -1;
+		try
+		{
+			value = (long)objectInputStream.readObject();
 			//System.out.println("The read integer has value: " + value + " Sending acknowledgement ...");
 			/*try
 			{

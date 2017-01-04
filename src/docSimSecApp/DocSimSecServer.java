@@ -85,9 +85,10 @@ public class DocSimSecServer
 	{
 		return connConfigs.sendInteger(numberOgGlobalTerms, objectInputStream, objectOutputStream);
 	}
-
-
-
+	public int sendLSIkParameter(long k, ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
+	{
+		return connConfigs.sendLong(k, objectInputStream, objectOutputStream);
+	}
 
 	public LinkedList<String> acceptEncrRandProdValue(int totNumDocsInCol, String intermFileDir, String intermFileNameStart,
 													   ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
@@ -185,8 +186,9 @@ public class DocSimSecServer
 
 			//Build the vectors for all documents in memory, later on we will write them to secondary storage
 			GenerateTFIDFVector generateTFIDFVector = new GenerateTFIDFVector();
+			long k = docSimSecServer.connConfigs.getLsi_k();
 			//We will build vectors for all documents, hence queryDocFileName = null and listOfGlobalTerms = null
-			CollectionLevelInfo CollectionLevelInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation, null, null);
+			CollectionLevelInfo CollectionLevelInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation, null, null, k);
 			System.out.println("Created TFIDF vectors for all documents in collection!");
 			totNumGlobalTerms = generateTFIDFVector.getNumGlobalTerms();
 
@@ -210,6 +212,17 @@ public class DocSimSecServer
 			System.out.println("Sent the global terms to client!");
 
 			//TODO: Add code to send k, U_k
+			if ( docSimSecServer.connConfigs.isLSIEnabled() == true )
+			{
+				//Sending k
+				System.out.println("Sending the LSI parameter k to client ...");
+				if ((ret = docSimSecServer.sendNumOfGlobalTerms(totNumGlobalTerms, serObjectInputStream, serObjectOutputStream)) != 0)
+				{
+					System.err.println("ERROR! in docSimSecApp.sendNumOfQueryTerms! ret = " + ret);
+					System.exit(ret);
+				}
+				System.out.println("Sent LSI parameter k to client");
+			}
 
 			System.out.println("Accepting the encrypted TFIDF vector query from client ...");
 			//Accept encrypted TFIDF query from client and store it locally in a file

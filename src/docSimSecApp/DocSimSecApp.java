@@ -31,6 +31,8 @@ public class DocSimSecApp
 	int totNumGlobalTerms;
 	int totNumDocsInCol;
 	protected String keyFileName;
+	boolean useLSI;
+	long k = 0;
 
 
 	DocSimSecApp(int numQueryTerms)
@@ -111,6 +113,12 @@ public class DocSimSecApp
 	{
 		totNumGlobalTerms = this.connConfigs.receiveInteger(objectInputStream, objectOutputStream);
 		return totNumGlobalTerms;
+	}
+
+	public long receiveLSIkValue(ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
+	{
+		k = this.connConfigs.receiveLong(objectInputStream, objectOutputStream);
+		return k;
 	}
 
 	public int receiveTotNumOfDocs(ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
@@ -281,11 +289,24 @@ public class DocSimSecApp
 			System.exit(-12);
 		}*/
 		//TODO add code to accept k, U_k
+		docSimSecApp.useLSI = docSimSecApp.connConfigs.isLSIEnabled();
+		if ( docSimSecApp.useLSI == true )
+		{
+			//Receive value k
+			docSimSecApp k =
+					System.out.println("Receiving the k value for LSI ...");
+			if (docSimSecApp.receiveTotNumOfGlobalTerms(docSimSecApp.getClObjectInputStream(), docSimSecApp.getClObjectOutputStream())<0)
+			{
+				System.out.println("ERROR! in receiveTotNumOfGlobalTerms() Invalid number of terms in the query! err: "+docSimSecApp.getNumGlobalTerms());
+				System.exit(-11);
+			}
+			System.out.println("Received the k value for LSI!");
+		}
 		System.out.println("Generating the query vector ...");
 		//start receiving the global terms one by one- end
 
 		GenerateTFIDFVector generateTFIDFVector = new GenerateTFIDFVector();
-        CollectionLevelInfo collectionLevelInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation, queryDocName, listOfGlobalTerms);
+        CollectionLevelInfo collectionLevelInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation, queryDocName, listOfGlobalTerms, 0/*k would be received*/);
 
 		System.out.println("Generated the query vector!");
 		//NOTHING TODO PREPROCESSING STAGE(PreSSC) ENDS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
