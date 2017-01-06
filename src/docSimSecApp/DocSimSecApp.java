@@ -32,7 +32,7 @@ public class DocSimSecApp
 	int totNumDocsInCol;
 	protected String keyFileName;
 	boolean useLSI;
-	long k = 0;
+	long k = -1;
 
 
 	DocSimSecApp(int numQueryTerms)
@@ -40,6 +40,11 @@ public class DocSimSecApp
 		totNumGlobalTerms = numQueryTerms;
 		connConfigs = new ClientServerConnConfigs();
 		keyFileName = connConfigs.getKeyFileName();
+	}
+
+	public long getK()
+	{
+		return this.k;
 	}
 
 	int sendServiceRequest()
@@ -117,8 +122,8 @@ public class DocSimSecApp
 
 	public long receiveLSIkValue(ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
 	{
-		k = this.connConfigs.receiveLong(objectInputStream, objectOutputStream);
-		return k;
+		this.k = this.connConfigs.receiveLong(objectInputStream, objectOutputStream);
+		return this.k;
 	}
 
 	public int receiveTotNumOfDocs(ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
@@ -178,6 +183,32 @@ public class DocSimSecApp
 		return err;
 	}
 
+	public LinkedList<LinkedList<Double>> receiveU_kMatrix(long m, long k, ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
+	{
+		long i;
+		LinkedList<Double> row = null;
+		LinkedList<LinkedList<Double>> U_k = new LinkedList<LinkedList<Double>>();
+		for ( i = 0; i < m; i++ )
+		{
+			row = connConfigs.acceptListOfDoublesFromPeer(k, objectInputStream, objectOutputStream);
+			if (row == null)
+			{
+				System.err.println("ERROR!!! While receiving row Double list for row index:"+ i +" in matrix U_k!");
+				Iterator<LinkedList<Double>> rowList= U_k.iterator();
+				while (rowList.hasNext())
+				{
+					LinkedList<Double> temp = rowList.next();
+					temp.clear();
+				}
+				U_k.clear();
+				U_k = null;
+				return null;
+			}
+			U_k.add(row);
+		}
+		return U_k;
+	}
+
 	public LinkedList<String> receiveEncryptedSimilarityScoreFrmServer(int totNumDocsInCol, String intermFileDir, String encrSimScoreFileNameStart, ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
 	{
 		int err = 0, count=1;
@@ -216,6 +247,11 @@ public class DocSimSecApp
 	public LinkedList<String> receiveGlobalTerms(ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
 	{
 		return connConfigs.acceptStrListFromPeer(objectInputStream, objectOutputStream, this.getNumGlobalTerms());
+	}
+
+	public boolean isLSIOn()
+	{
+		return connConfigs.isLSIEnabled();
 	}
 
     public static void main(String args[]) throws IOException
@@ -293,20 +329,23 @@ public class DocSimSecApp
 		if ( docSimSecApp.useLSI == true )
 		{
 			//Receive value k
-			docSimSecApp k =
-					System.out.println("Receiving the k value for LSI ...");
-			if (docSimSecApp.receiveTotNumOfGlobalTerms(docSimSecApp.getClObjectInputStream(), docSimSecApp.getClObjectOutputStream())<0)
+			System.out.println("Receiving the k value for LSI ...");
+			long k = docSimSecApp.receiveLSIkValue(docSimSecApp.getClObjectInputStream(), docSimSecApp.getClObjectOutputStream());
+			if (k<0)
 			{
 				System.out.println("ERROR! in receiveTotNumOfGlobalTerms() Invalid number of terms in the query! err: "+docSimSecApp.getNumGlobalTerms());
 				System.exit(-11);
 			}
-			System.out.println("Received the k value for LSI!");
+			System.out.println("Received the k value for LSI! K:"+docSimSecApp.getK());
+			//we know m and n are given as m = docSimSecApp.getNumGlobalTerms(), n = docSimSecApp.getTotNumDocsInCol();
+            //TODO Accept U_k - function written above receiveU_kMatrix()
+			docSimSecApp.
 		}
 		System.out.println("Generating the query vector ...");
 		//start receiving the global terms one by one- end
 
 		GenerateTFIDFVector generateTFIDFVector = new GenerateTFIDFVector();
-        CollectionLevelInfo collectionLevelInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation, queryDocName, listOfGlobalTerms, 0/*k would be received*/);
+        CollectionLevelInfo collectionLevelInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation, queryDocName, listOfGlobalTerms, docSimSecApp.getK(), docSimSecApp.isLSIOn());
 
 		System.out.println("Generated the query vector!");
 		//NOTHING TODO PREPROCESSING STAGE(PreSSC) ENDS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

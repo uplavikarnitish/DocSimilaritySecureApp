@@ -1,6 +1,7 @@
 package docSimSecApp;
 
 import java.io.*;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
 
@@ -225,6 +226,48 @@ public class ClientServerConnConfigs
 
 		return 0;
 	}
+	/*
+	* Accept a row of Matrix containing Doubles from client
+	* */
+	public LinkedList<Double> acceptListOfDoublesFromPeer(long k, ObjectInputStream serObjectInputStream, ObjectOutputStream serObjectOutputStream)
+	{
+	    LinkedList<Double> rowDoubles = new LinkedList<Double>();
+	    Double temp = null;
+
+	    for ( int i=0; i<k; i++ )
+		{
+			temp = this.receiveDouble(serObjectInputStream, serObjectOutputStream);
+		    if (  temp == null )
+			{
+				System.err.println("ERROR!!! Cannot receive a Double value from peer! Doubles obtained prior:"+rowDoubles.size());
+				rowDoubles.clear();
+				rowDoubles = null;
+			}
+			rowDoubles.add(temp);
+		}
+	    return rowDoubles;
+    }
+
+	/*
+	* Send a row of Matrix containing Doubles from client
+	* */
+	public int sendListOfDoublesFromPeer( LinkedList<Double> doublesList, ObjectInputStream serObjectInputStream, ObjectOutputStream serObjectOutputStream)
+	{
+		int err = 0;
+		Iterator<Double> doubleIterator = doublesList.iterator();
+		while ( doubleIterator.hasNext() )
+		{
+			err = this.sendDouble(doubleIterator.next(), serObjectInputStream, serObjectOutputStream);
+			if ( (err) != 0 )
+			{
+			    //For more debug capability use a counter to check after which it failed. Did not add now to reduce
+				//increment computations - "Optimization"
+				System.err.println("ERROR!!! While sending the double value!");
+				return err;
+			}
+		}
+		return err;
+	}
 
 	/*
 	* Accept a fixed number of [ encrypted ] strings from client
@@ -438,6 +481,33 @@ public class ClientServerConnConfigs
 		return err;
 	}
 
+	public int sendDouble(Double value, ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
+	{
+		int err=0;
+		try
+		{
+			//System.out.println("Trying to send " + value + " as integer to server ...");
+			objectOutputStream.writeObject(value);
+			//System.out.println("Sent " + value + " to server! Waiting for acknowledgement ...");
+			if (!this.isAck((String) objectInputStream.readObject()))
+			{
+				System.out.print("Error! No acknowledgement received for the "+value+" Double sent!");
+				return -3;
+			}
+
+			//System.out.println("Acknowledgement received from server regarding the " + value + " integer sent!");
+		} catch (IOException e)
+		{
+			err = -1;
+			e.printStackTrace();
+		} catch (ClassNotFoundException e)
+		{
+			err = -2;
+			e.printStackTrace();
+		}
+		return err;
+	}
+
 	public int sendLong(long value, ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
 	{
 		int err=0;
@@ -489,6 +559,36 @@ public class ClientServerConnConfigs
 		} catch (ClassNotFoundException e)
 		{
 			value = -2;
+			System.out.println("ERROR! ClassNotFoundException!");
+			e.printStackTrace();
+		}
+		return value;
+	}
+
+	public Double receiveDouble(ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
+	{
+		Double value = null;
+		try
+		{
+			value = (Double)objectInputStream.readObject();
+			//System.out.println("The read integer has value: " + value + " Sending acknowledgement ...");
+			/*try
+			{
+				//Thread.sleep(10000);
+			} catch (InterruptedException e)
+			{
+				e.printStackTrace();
+			}*/
+
+			objectOutputStream.writeObject(this.getAck());
+			//System.out.println("Acknowledgement sent for value read:"+ value +" !");
+		} catch (IOException e)
+		{
+			System.out.println("ERROR! IOException!");
+			e.printStackTrace();
+		} catch (ClassNotFoundException e)
+		{
+			value = null;
 			System.out.println("ERROR! ClassNotFoundException!");
 			e.printStackTrace();
 		}

@@ -20,6 +20,7 @@ public class DocSimSecServer
 	ServerSocket serverSocket;
 	ClientServerConnConfigs connConfigs;
 	String keyFileName;
+	long k;
 
 
 	DocSimSecServer()
@@ -75,6 +76,21 @@ public class DocSimSecServer
 			}
 		}
 		return 0;
+	}
+
+	public long setK(long k)
+	{
+		this.k = k;
+		return this.k;
+	}
+	public long getK()
+	{
+		return this.k;
+	}
+
+	public int sendRowOfMatrix(LinkedList<Double> rowAsList, ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
+	{
+		return connConfigs.sendListOfDoublesFromPeer(rowAsList, objectInputStream, objectOutputStream);
 	}
 
 	public int sendNumOfDocs(int value, ObjectInputStream objectInputStream, ObjectOutputStream objectOutputStream)
@@ -136,6 +152,11 @@ public class DocSimSecServer
 		return err;
 	}
 
+	public boolean isLSIOn()
+	{
+		return connConfigs.isLSIEnabled();
+	}
+
 
 	public static void main(String[] args)
 	{
@@ -188,7 +209,7 @@ public class DocSimSecServer
 			GenerateTFIDFVector generateTFIDFVector = new GenerateTFIDFVector();
 			long k = docSimSecServer.connConfigs.getLsi_k();
 			//We will build vectors for all documents, hence queryDocFileName = null and listOfGlobalTerms = null
-			CollectionLevelInfo CollectionLevelInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation, null, null, k);
+			CollectionLevelInfo CollectionLevelInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation,null, null, k, docSimSecServer.isLSIOn());
 			System.out.println("Created TFIDF vectors for all documents in collection!");
 			totNumGlobalTerms = generateTFIDFVector.getNumGlobalTerms();
 
@@ -214,14 +235,35 @@ public class DocSimSecServer
 			//TODO: Add code to send k, U_k
 			if ( docSimSecServer.connConfigs.isLSIEnabled() == true )
 			{
+			    //Set k
+				docSimSecServer.setK(docSimSecServer.connConfigs.getLsi_k());
 				//Sending k
 				System.out.println("Sending the LSI parameter k to client ...");
-				if ((ret = docSimSecServer.sendNumOfGlobalTerms(totNumGlobalTerms, serObjectInputStream, serObjectOutputStream)) != 0)
+				if ((ret = docSimSecServer.sendLSIkParameter(docSimSecServer.connConfigs.getLsi_k(), serObjectInputStream, serObjectOutputStream)) != 0)
 				{
 					System.err.println("ERROR! in docSimSecApp.sendNumOfQueryTerms! ret = " + ret);
 					System.exit(ret);
 				}
-				System.out.println("Sent LSI parameter k to client");
+				System.out.println("Sent LSI parameter k to client! K:"+docSimSecServer.getK());
+				//Now get row by row of U_k[m x k] m times
+				for ( long i = 0; i < totNumGlobalTerms; i++ )
+				{
+					LinkedList<Double> rowOfU_k = generateTFIDFVector.getRowOfMatrix("TruncatedU_k", i);
+					if ( rowOfU_k == null )
+					{
+						System.err.println("ERROR!!! Error in obtaining row from matrix");
+						System.exit(-6);
+					}
+					//Row obtained, send the row
+					ret = docSimSecServer.sendRowOfMatrix(rowOfU_k, serObjectInputStream, serObjectOutputStream);
+					if ( ret < 0 )
+					{
+						System.err.println("ERROR!!! Error in sending a row:"+i+" of U_k to peer!i ret:"+ret);
+						rowOfU_k.clear();	//Clearing
+					}
+					//Successfully sent the row, now clear it to store the next row
+					rowOfU_k.clear();
+				}
 			}
 
 			System.out.println("Accepting the encrypted TFIDF vector query from client ...");
