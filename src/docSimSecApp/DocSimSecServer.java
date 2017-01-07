@@ -209,7 +209,7 @@ public class DocSimSecServer
 			GenerateTFIDFVector generateTFIDFVector = new GenerateTFIDFVector();
 			long k = docSimSecServer.connConfigs.getLsi_k();
 			//We will build vectors for all documents, hence queryDocFileName = null and listOfGlobalTerms = null
-			CollectionLevelInfo CollectionLevelInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation,null, null, k, docSimSecServer.isLSIOn());
+			CollectionLevelInfo CollectionLevelInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation,null, null, k, docSimSecServer.isLSIOn(), null);
 			System.out.println("Created TFIDF vectors for all documents in collection!");
 			totNumGlobalTerms = generateTFIDFVector.getNumGlobalTerms();
 

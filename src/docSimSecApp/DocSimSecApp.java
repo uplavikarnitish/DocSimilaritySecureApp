@@ -33,7 +33,7 @@ public class DocSimSecApp
 	protected String keyFileName;
 	boolean useLSI;
 	long k = -1;
-
+	LinkedList<LinkedList<Double>> U_k;
 
 	DocSimSecApp(int numQueryTerms)
 	{
@@ -314,7 +314,7 @@ public class DocSimSecApp
 		LinkedList<String> listOfGlobalTerms = null;
 		if ( (listOfGlobalTerms = docSimSecApp.receiveGlobalTerms(docSimSecApp.getClObjectInputStream(), docSimSecApp.getClObjectOutputStream())) ==null )
 		{
-			System.out.println("ERROR! in receiveGlobalTerms() listOfGlobalTerms: "+listOfGlobalTerms );
+			System.err.println("ERROR! in receiveGlobalTerms() listOfGlobalTerms: "+listOfGlobalTerms );
 			System.exit(-11);
 		}
 		System.out.println("Obtained the global terms from server to create query vector! No. of terms received:"+listOfGlobalTerms.size()+" "+listOfGlobalTerms );
@@ -333,19 +333,26 @@ public class DocSimSecApp
 			long k = docSimSecApp.receiveLSIkValue(docSimSecApp.getClObjectInputStream(), docSimSecApp.getClObjectOutputStream());
 			if (k<0)
 			{
-				System.out.println("ERROR! in receiveTotNumOfGlobalTerms() Invalid number of terms in the query! err: "+docSimSecApp.getNumGlobalTerms());
-				System.exit(-11);
+				System.err.println("ERROR! in receiveTotNumOfGlobalTerms() Invalid number of terms in the query! err: "+docSimSecApp.getNumGlobalTerms());
+				System.exit(-12);
 			}
 			System.out.println("Received the k value for LSI! K:"+docSimSecApp.getK());
 			//we know m and n are given as m = docSimSecApp.getNumGlobalTerms(), n = docSimSecApp.getTotNumDocsInCol();
             //TODO Accept U_k - function written above receiveU_kMatrix()
-			docSimSecApp.
+			docSimSecApp.U_k = docSimSecApp.receiveU_kMatrix(docSimSecApp.getNumGlobalTerms(),
+					docSimSecApp.getK(), docSimSecApp.getClObjectInputStream(), docSimSecApp.getClObjectOutputStream());
+			if ( docSimSecApp.U_k == null )
+			{
+				System.err.println("ERROR!!! Cannot obtain U_k from peer!");
+				System.exit(-13);
+			}
+
 		}
 		System.out.println("Generating the query vector ...");
 		//start receiving the global terms one by one- end
 
 		GenerateTFIDFVector generateTFIDFVector = new GenerateTFIDFVector();
-        CollectionLevelInfo collectionLevelInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation, queryDocName, listOfGlobalTerms, docSimSecApp.getK(), docSimSecApp.isLSIOn());
+        CollectionLevelInfo collectionLevelInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation, queryDocName, listOfGlobalTerms, docSimSecApp.getK(), docSimSecApp.isLSIOn(), docSimSecApp.U_k);
 
 		System.out.println("Generated the query vector!");
 		//NOTHING TODO PREPROCESSING STAGE(PreSSC) ENDS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
