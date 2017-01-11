@@ -32,7 +32,7 @@ public class ClientServerConnConfigs
 		//keyFileName = "/home/nuplavikar/temp/key_files/key_1024.txt";
 		//keyFileName = "/home/nuplavikar/temp/key_files/key_2048.txt";
 		//LSI-based parameters
-		lsi_k = 2;
+		lsi_k = 4;
 		useLSI = true;
 	}
 
