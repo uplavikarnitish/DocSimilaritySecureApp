@@ -34,6 +34,7 @@ public class DocSimSecApp
 	boolean useLSI;
 	long k = -1;
 	LinkedList<LinkedList<Double>> U_k;
+	LinkedList<LinkedList<Double>> U_k_bin;
 
 	DocSimSecApp(int numQueryTerms)
 	{
@@ -257,7 +258,7 @@ public class DocSimSecApp
     public static void main(String args[]) throws IOException
 	{
         String indexLocation = "/home/nuplavikar/temp/index/";//$
-        String queryDocName = "1.txt";//$
+        String queryDocName = "4.txt";//$
 		int ret;
 
 
@@ -324,7 +325,7 @@ public class DocSimSecApp
 			System.err.println("ERROR! Invalid number of global terms received! Expected:"+ docSimSecApp.getNumGlobalTerms()+" Obtained:"+listOfGlobalTerms.size());
 			System.exit(-12);
 		}*/
-		//TODO add code to accept k, U_k
+		//TODO add code to accept k, U_k, U_k_bin
 		docSimSecApp.useLSI = docSimSecApp.connConfigs.isLSIEnabled();
 		if ( docSimSecApp.useLSI == true )
 		{
@@ -346,13 +347,23 @@ public class DocSimSecApp
 				System.err.println("ERROR!!! Cannot obtain U_k from peer!");
 				System.exit(-13);
 			}
+			System.out.println("Obtained U_k for TFIDF from server! Dim(U_k):["+docSimSecApp.U_k.size()+" x "+docSimSecApp.U_k.get(0).size()+"]");
+			//TODO Accept U_k_bin - function written above receiveU_kMatrix()
+			docSimSecApp.U_k_bin = docSimSecApp.receiveU_kMatrix(docSimSecApp.getNumGlobalTerms(),
+					docSimSecApp.getK(), docSimSecApp.getClObjectInputStream(), docSimSecApp.getClObjectOutputStream());
+			if ( docSimSecApp.U_k_bin == null )
+			{
+				System.err.println("ERROR!!! Cannot obtain U_k_bin from peer!");
+				System.exit(-14);
+			}
+			System.out.println("Obtained U_k_bin for binary from server! Dim(U_k_bin):["+docSimSecApp.U_k_bin.size()+" x "+docSimSecApp.U_k_bin.get(0).size()+"]");
 
 		}
 		System.out.println("Generating the query vector ...");
 		//start receiving the global terms one by one- end
 
 		GenerateTFIDFVector generateTFIDFVector = new GenerateTFIDFVector();
-        CollectionLevelInfo collectionLevelInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation, queryDocName, listOfGlobalTerms, docSimSecApp.getK(), docSimSecApp.isLSIOn(), docSimSecApp.U_k);
+        CollectionLevelInfo collectionLevelInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation, queryDocName, listOfGlobalTerms, docSimSecApp.getK(), docSimSecApp.isLSIOn(), docSimSecApp.U_k, docSimSecApp.U_k_bin);
 
 		System.out.println("Generated the query vector!");
 		//NOTHING TODO PREPROCESSING STAGE(PreSSC) ENDS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
