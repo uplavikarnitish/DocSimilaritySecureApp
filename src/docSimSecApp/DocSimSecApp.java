@@ -105,6 +105,12 @@ public class DocSimSecApp
 	public int getNumGlobalTerms()
 	{return totNumGlobalTerms;}
 
+	public int setNumGlobalTerms(int k)
+	{
+		totNumGlobalTerms = k;
+		return 0;
+	}
+
 	public ObjectInputStream getClObjectInputStream()
 	{
 		return clObjectInputStream;
@@ -370,10 +376,17 @@ public class DocSimSecApp
 
 		//NOTHING TODO SSC ALGORITHM LINES 2, 3 STARTS__________________________________________________________________
 		String keyFileName = docSimSecApp.getKeyFileName();
-		if (generateTFIDFVector.writeDocVectorToFile(queryDocName, encrQueryTFIDFVectorFile, encrQueryBinVectorFile, keyFileName) == -1 )
+		if (generateTFIDFVector.writeDocVectorToFile(docSimSecApp.getK()/*only if lsi enabled*/, queryDocName, encrQueryTFIDFVectorFile, encrQueryBinVectorFile, keyFileName) == -1 )
 		{
 			System.err.println("ERROR - FILE NOT FOUND! File "+queryDocName+" is not indexed!");
 			System.exit(-1);
+		}
+
+		if (docSimSecApp.isLSIOn())
+		{
+			//Prior to the writeDocVectorToFile() function, we were working with larger m dimensions. Beyond this point
+			//we need to work with k reduced dimensions. Hence. modifying the global term count to k - TODO - make this better
+			docSimSecApp.setNumGlobalTerms((int)docSimSecApp.getK()); //k ~ 100-200
 		}
 		//Send encrypted TFIDF query vector stored in file
 		docSimSecApp.sendEncrQuery(encrQueryTFIDFVectorFile);

@@ -186,7 +186,8 @@ public class DocSimSecServer
 	public static void main(String[] args)
 	{
 
-		int totNumGlobalTerms = 0, ret;
+		int totNumGlobalTerms = 0;
+		int ret;
 		DocSimSecServer docSimSecServer = new DocSimSecServer();
 		docSimSecServer.listenSocket();
 		String indexLocation = "/home/nuplavikar/temp/index/";//$
@@ -286,6 +287,8 @@ public class DocSimSecServer
 					System.exit(ret);
 				}
 				System.out.println("Sent LSI parameter U_k of Binary matrix to client!");
+				//Now number of dimensions would be indicated by k
+				totNumGlobalTerms = (int)docSimSecServer.getK(); //k ~ 100 or 200
 			}
 
 			System.out.println("Accepting the encrypted TFIDF vector query from client ...");
