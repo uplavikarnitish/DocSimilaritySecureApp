@@ -264,7 +264,7 @@ public class DocSimSecApp
     public static void main(String args[]) throws IOException
 	{
         String indexLocation = "/home/nuplavikar/temp/index/";//$
-        String queryDocName = "4.txt";//$
+        String queryDocName = "1.txt";//$
 		int ret;
 
 
