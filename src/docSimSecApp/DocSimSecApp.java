@@ -292,6 +292,7 @@ public class DocSimSecApp
 		long startTime;
 
 		DocSimSecApp docSimSecApp = new DocSimSecApp(0);
+		long clientTotalRequestTime = timer.startTimer();
 
 
 		docSimSecApp.sendServiceRequest();
@@ -306,7 +307,7 @@ public class DocSimSecApp
 		* */
 		if (docSimSecApp.receiveTotNumOfGlobalTerms(docSimSecApp.getClObjectInputStream(), docSimSecApp.getClObjectOutputStream())<0)
 		{
-			System.out.println("ERROR! in receiveTotNumOfGlobalTerms() Invalid number of terms in the query! err: "+docSimSecApp.getNumGlobalTerms());
+			System.err.println("ERROR! in receiveTotNumOfGlobalTerms() Invalid number of terms in the query! err: "+docSimSecApp.getNumGlobalTerms());
 			System.exit(-11);
 		}
 		System.out.println("Received the number of terms belonging to server's global vector space!");
@@ -370,11 +371,13 @@ public class DocSimSecApp
 
 		GenerateTFIDFVector generateTFIDFVector = new GenerateTFIDFVector();
         CollectionLevelInfo collectionLevelInfo = generateTFIDFVector.getDocTFIDFVectors(indexLocation, queryDocName, listOfGlobalTerms, docSimSecApp.getK(), docSimSecApp.isLSIOn(), docSimSecApp.U_k, docSimSecApp.U_k_bin);
+		System.out.println(timer.getFormattedTime("Client Preprocessing TIME:", timer.endTimer(startTime) ));
 
 		System.out.println("Generated the query vector!");
 		//NOTHING TODO PREPROCESSING STAGE(PreSSC) ENDS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 		//NOTHING TODO SSC ALGORITHM LINES 2, 3 STARTS__________________________________________________________________
+		long clientActualProtStartTime = timer.startTimer();
 		String keyFileName = docSimSecApp.getKeyFileName();
 		if (generateTFIDFVector.writeDocVectorToFile(docSimSecApp.getK()/*only if lsi enabled*/, queryDocName, encrQueryTFIDFVectorFile, encrQueryBinVectorFile, keyFileName) == -1 )
 		{
@@ -465,7 +468,10 @@ public class DocSimSecApp
 			System.err.println("ERROR! in docSimSecApp.decryptSimilariyScores(): "+ret);
 			System.exit(ret);
 		}
+
+		System.out.println(timer.getFormattedTime("Client Actual Protocol TIME:", timer.endTimer(clientActualProtStartTime) ));
 		System.out.println("Similarity Scores: "+simScores);
+		System.out.println(timer.getFormattedTime("Client total request TIME:", timer.endTimer(clientTotalRequestTime) ));
 		//Time end
 		Date date2= new Date();
 		//getTime() returns current time in milliseconds

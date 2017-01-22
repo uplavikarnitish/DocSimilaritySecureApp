@@ -207,8 +207,10 @@ public class DocSimSecServer
 		File encrQueryFrmClientFile = null;
 		LinkedList<String> opListIntermRandAndProdFileNames;
 		LinkedList<String> encrSimProdFileNameList;
+		Timer timer = new Timer();
 
 		clientSocket = docSimSecServer.acceptServiceRequest();
+		long reqAcceptedTime = timer.startTimer();
 		encrTFIDFQueryFrmClientFileName = docVecLocation+"/encrTFIDFQFrmCl_"+clientSocket.hashCode()+"_"+clientSocket.getPort()+".txt";
 		encrBinQueryFrmClientFileName = docVecLocation+"/encrBinQFrmCl_"+clientSocket.hashCode()+"_"+clientSocket.getPort()+".txt";
 		//System.out.println("encrQueryFrmClientFileName: "+encrQueryFrmClientFileName);
@@ -230,6 +232,8 @@ public class DocSimSecServer
 			/*
 			* Create input and output object streams based on the client socket - END
 			* */
+
+			long serverPreprocessingTime = timer.startTimer();
 
 			//Build the vectors for all documents in memory, later on we will write them to secondary storage
 			GenerateTFIDFVector generateTFIDFVector = new GenerateTFIDFVector();
@@ -291,7 +295,9 @@ public class DocSimSecServer
 				totNumGlobalTerms = (int)docSimSecServer.getK(); //k ~ 100 or 200
 			}
 
+			System.out.println(timer.getFormattedTime("Server Preprocessing TIME:", timer.endTimer(serverPreprocessingTime) ));
 			System.out.println("Accepting the encrypted TFIDF vector query from client ...");
+			long serverActualProcessingTime = timer.startTimer();
 			//Accept encrypted TFIDF query from client and store it locally in a file
 			if ( (ClientServerConnConfigs.acceptStrFromPeer(serObjectInputStream, serObjectOutputStream, totNumGlobalTerms, encrTFIDFQueryFrmClientFileName))!=0 )
 			{
@@ -308,7 +314,7 @@ public class DocSimSecServer
 			System.out.println("Accepted the encrypted Binary query vector from client and stored in "+encrBinQueryFrmClientFileName);
 
 
-			System.out.println("Starting secure, two-party multiplication protocol;\n O/P:ciphertext of plaintext products[E(a.b)]; I/P:ciphertexts[E(a), E(b)] ...");
+			System.out.println("Starting secure, two-party multiplication protocol;\nO/P:ciphertext of plaintext products[E(a.b)]; I/P:ciphertexts[E(a), E(b)] ...");
 			//NOTHING TODO SSC ALGORITHM LINES 5, MP protocol part 1 STARTS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 			/*
 			* Write all the local documents in terms of their TF-IDF value and binary value vectors. i.e. two files
@@ -384,6 +390,7 @@ public class DocSimSecServer
 				System.err.println("ERROR! in sendEncryptedSimilarityScoreToClient(): "+ret);
 				System.exit(ret);
 			}
+			System.out.println(timer.getFormattedTime("Server Processing TIME", timer.endTimer(serverActualProcessingTime) ));
 			System.out.println("Encrypted similarity scores sent to peer!");
 
 
@@ -395,6 +402,8 @@ public class DocSimSecServer
 
 
 		//Socket clientSocket = serverSocket.accept()
+
+		System.out.println(timer.getFormattedTime("Server total request handling TIME:", timer.endTimer(reqAcceptedTime) ));
 		System.exit(0);
 	}
 }
