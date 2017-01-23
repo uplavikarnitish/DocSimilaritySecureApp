@@ -195,8 +195,10 @@ public class DocSimSecApp
 		long i;
 		LinkedList<Double> row = null;
 		LinkedList<LinkedList<Double>> U_k = new LinkedList<LinkedList<Double>>();
+		//System.out.println("NITISH --->>> Accepting U_k in receiveU_kMatrix()\t m:"+m+"\t k:"+k);
 		for ( i = 0; i < m; i++ )
 		{
+			//System.out.println("NITISH --->> Receiving row # "+i+" of matrix U_k...");
 			row = connConfigs.acceptListOfDoublesFromPeer(k, objectInputStream, objectOutputStream);
 			if (row == null)
 			{
@@ -211,8 +213,10 @@ public class DocSimSecApp
 				U_k = null;
 				return null;
 			}
+			//System.out.println("NITISH --->> Received row # "+i+" of matrix U_k, its len:"+row.size()+"!!!");
 			U_k.add(row);
 		}
+		//System.out.println("NITISH --->> Client Accepted entire U_k, dimensions: "+U_k.size()+" x "+U_k.get(0).size());
 		return U_k;
 	}
 
@@ -347,6 +351,7 @@ public class DocSimSecApp
 			System.out.println("Received the k value for LSI! K:"+docSimSecApp.getK());
 			//we know m and n are given as m = docSimSecApp.getNumGlobalTerms(), n = docSimSecApp.getTotNumDocsInCol();
             //TODO Accept U_k - function written above receiveU_kMatrix()
+			System.out.println("Accepting the tfidf U_K from server!");
 			docSimSecApp.U_k = docSimSecApp.receiveU_kMatrix(docSimSecApp.getNumGlobalTerms(),
 					docSimSecApp.getK(), docSimSecApp.getClObjectInputStream(), docSimSecApp.getClObjectOutputStream());
 			if ( docSimSecApp.U_k == null )
@@ -356,6 +361,7 @@ public class DocSimSecApp
 			}
 			System.out.println("Obtained U_k for TFIDF from server! Dim(U_k):["+docSimSecApp.U_k.size()+" x "+docSimSecApp.U_k.get(0).size()+"]");
 			//TODO Accept U_k_bin - function written above receiveU_kMatrix()
+			System.out.println("Accepting the binary U_K from server!");
 			docSimSecApp.U_k_bin = docSimSecApp.receiveU_kMatrix(docSimSecApp.getNumGlobalTerms(),
 					docSimSecApp.getK(), docSimSecApp.getClObjectInputStream(), docSimSecApp.getClObjectOutputStream());
 			if ( docSimSecApp.U_k_bin == null )

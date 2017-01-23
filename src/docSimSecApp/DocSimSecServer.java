@@ -163,19 +163,23 @@ public class DocSimSecServer
 		int err = 0;
 		for ( long i = 0; i < totNumGlobalTerms; i++ )
 		{
+			//System.out.println("NITISH--->>Getting doc i.e. rowOfU_k:"+i);
 			LinkedList<Double> rowOfU_k = generateTFIDFVector.getRowOfMatrix(matrixType, "TruncatedU_k", i);
 			if ( rowOfU_k == null )
 			{
 				System.err.println("ERROR!!! Error in obtaining row from matrix");
 				System.exit(-6);
 			}
+			//System.out.println("NITISH--->>Got doc i.e. rowOfU_k:"+i+" Size:"+rowOfU_k.size()+"!");
 			//Row obtained, send the row
+			//System.out.println("NITISH--->>Sending doc i.e. rowOfU_k:"+i);
 			err = sendRowOfMatrix(rowOfU_k, serObjectInputStream, serObjectOutputStream);
 			if ( err < 0 )
 			{
 				System.err.println("ERROR!!! Error in sending a row:"+i+" of U_k to peer!i ret:"+err);
 				rowOfU_k.clear();	//Clearing
 			}
+			//System.out.println("NITISH--->>Sent doc i.e. rowOfU_k:"+i+"!");
 			//Successfully sent the row, now clear it to store the next row
 			rowOfU_k.clear();
 		}
@@ -276,6 +280,7 @@ public class DocSimSecServer
 				}
 				System.out.println("Sent LSI parameter k to client! K:"+docSimSecServer.getK());
 				//Now get row by row of U_k[m x k] m times
+				System.out.println("Sending LSI parameter U_k of TFIDF matrix to client!");
 				ret = docSimSecServer.sendU_kToClient(totNumGlobalTerms, generateTFIDFVector, "TFIDF_matrix_system", serObjectInputStream, serObjectOutputStream);
                 if ( ret < 0 )
 				{

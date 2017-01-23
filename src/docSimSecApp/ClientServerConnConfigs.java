@@ -22,18 +22,18 @@ public class ClientServerConnConfigs
 
 	ClientServerConnConfigs()
 	{
-		serverHostName = "r13wjiang.managed.mst.edu";
+		serverHostName = "r08wjiang.managed.mst.edu";
 		//serverHostName = "localhost";
 		serverPortID = 19900;
 		// 1,800,000 milliseconds = 30 minutes.
 		listeningTimeout = 3600000;
 		ack = "acknowledgement";
-		keyFileName = "/home/nuplavikar/temp/key_files/key_512.txt";
+		//keyFileName = "/home/nuplavikar/temp/key_files/key_512.txt";
 		//keyFileName = "/home/nuplavikar/temp/key_files/key_1024.txt";
-		//keyFileName = "/home/nuplavikar/temp/key_files/key_2048.txt";
+		keyFileName = "/home/nuplavikar/temp/key_files/key_2048.txt";
 		//LSI-based parameters
-		lsi_k = 4;
-		useLSI = true;
+		lsi_k = 100;
+		useLSI = false;
 	}
 
 	public long getLsi_k()
@@ -234,7 +234,7 @@ public class ClientServerConnConfigs
 	    LinkedList<Double> rowDoubles = new LinkedList<Double>();
 	    Double temp = null;
 
-	    for ( int i=0; i<k; i++ )
+	    for ( long i=0; i<k; i++ )
 		{
 			temp = this.receiveDouble(serObjectInputStream, serObjectOutputStream);
 		    if (  temp == null )
@@ -489,21 +489,21 @@ public class ClientServerConnConfigs
 			//System.out.println("Trying to send " + value + " as integer to server ...");
 			objectOutputStream.writeObject(value);
 			//System.out.println("Sent " + value + " to server! Waiting for acknowledgement ...");
-			if (!this.isAck((String) objectInputStream.readObject()))
+			/*if (!this.isAck((String) objectInputStream.readObject()))
 			{
 				System.out.print("Error! No acknowledgement received for the "+value+" Double sent!");
 				return -3;
-			}
+			}*/
 
 			//System.out.println("Acknowledgement received from server regarding the " + value + " integer sent!");
 		} catch (IOException e)
 		{
 			err = -1;
 			e.printStackTrace();
-		} catch (ClassNotFoundException e)
+		} //catch (ClassNotFoundException e)
 		{
-			err = -2;
-			e.printStackTrace();
+			//err = -2;
+			//e.printStackTrace();
 		}
 		return err;
 	}
@@ -570,7 +570,9 @@ public class ClientServerConnConfigs
 		Double value = null;
 		try
 		{
+			//System.out.println("Nitish --->> about to receive double");
 			value = (Double)objectInputStream.readObject();
+			//System.out.println("Nitish --->> received double:"+value);
 			//System.out.println("The read integer has value: " + value + " Sending acknowledgement ...");
 			/*try
 			{
@@ -580,7 +582,9 @@ public class ClientServerConnConfigs
 				e.printStackTrace();
 			}*/
 
-			objectOutputStream.writeObject(this.getAck());
+			//System.out.println("NITISH --->> Sending ack");
+			//objectOutputStream.writeObject(this.getAck());
+			//System.out.println("NITISH --->> Ack sent!");
 			//System.out.println("Acknowledgement sent for value read:"+ value +" !");
 		} catch (IOException e)
 		{
